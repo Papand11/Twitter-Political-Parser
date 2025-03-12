@@ -1,0 +1,39 @@
+import tweepy
+import json
+
+# Настройки API (получить ключи в https://developer.twitter.com/)
+API_KEY = "your_api_key"
+API_SECRET = "your_api_secret"
+ACCESS_TOKEN = "your_access_token"
+ACCESS_SECRET = "your_access_secret"
+
+# Аутентификация
+auth = tweepy.OAuthHandler(API_KEY, API_SECRET)
+auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+api = tweepy.API(auth, wait_on_rate_limit=True)
+
+# Ключевые слова для фильтрации политических новостей
+POLITICAL_KEYWORDS = ["election", "government", "policy", "president", "senate", "congress", "minister", "parliament"]
+
+# Получение твитов из подписок
+def get_political_tweets(count=50):
+    tweets_data = []
+    for tweet in tweepy.Cursor(api.home_timeline, tweet_mode="extended").items(count):
+        if any(keyword in tweet.full_text.lower() for keyword in POLITICAL_KEYWORDS):
+            tweets_data.append({
+                "user": tweet.user.screen_name,
+                "text": tweet.full_text,
+                "date": tweet.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "link": f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}"
+            })
+    return tweets_data
+
+# Сохранение данных в JSON
+def save_to_json(data, filename="political_tweets.json"):
+    with open(filename, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
+    print(f"Сохранено {len(data)} твитов в {filename}")
+
+if __name__ == "__main__":
+    tweets = get_political_tweets(100)
+    save_to_json(tweets)
